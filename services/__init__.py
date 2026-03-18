@@ -7,6 +7,7 @@ __all__ = [
     "EmailService",
     "NewsService",
     "CalendarService",
+    "ReclaimService",
     "WeatherService",
     "TrafficService",
     "TodoService"
