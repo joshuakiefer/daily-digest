@@ -62,6 +62,26 @@ def test_custom_digest():
         print(f"Error: {response.text}\n")
 
 
+def test_send_digest():
+    """Test the send digest endpoint"""
+    print("🔍 Testing send digest endpoint...")
+    response = requests.post(f"{BASE_URL}/digest/send")
+    print(f"Status: {response.status_code}")
+
+    if response.status_code == 200:
+        data = response.json()
+        print(f"\n📊 Digest Summary:")
+        print("=" * 80)
+        print(data.get('summary', 'No summary'))
+        print("=" * 80)
+        print(f"\n📅 Timestamp: {data.get('timestamp')}")
+        print(f"📧 Email sent: {data.get('email_sent', False)}")
+    elif response.status_code == 400:
+        print(f"⚠️  Expected: Email delivery not configured (set DIGEST_RECIPIENT_EMAIL)")
+    else:
+        print(f"Error: {response.text}\n")
+
+
 if __name__ == "__main__":
     print("🧪 Daily Digest API Test Suite")
     print("=" * 80)
@@ -72,6 +92,7 @@ if __name__ == "__main__":
         test_health()
         test_quick_digest()
         test_custom_digest()
+        test_send_digest()
 
         print("✅ All tests completed!")
         print(f"\n📚 View interactive API docs at: {BASE_URL}/docs")

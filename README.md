@@ -11,6 +11,7 @@ A FastAPI-based daily digest service that aggregates information from multiple s
 - 🚗 **Traffic** - Real-time traffic using Google Routes API
 - ✅ **Todo Lists** - Today's tasks from Todoist
 - 🤖 **AI Summaries** - Intelligent summaries powered by Claude AI
+- 📨 **Email Delivery** - Automatically email digest summaries via Gmail
 
 ## Architecture
 
@@ -158,3 +159,46 @@ Generate full daily digest
 
 ### `POST /digest/quick`
 Generate digest with default settings (all sources enabled)
+
+### `POST /digest/send`
+Generate a digest and send it via email. Always sends the email regardless of the `AUTO_SEND_EMAIL` setting. Requires `DIGEST_RECIPIENT_EMAIL` and Gmail OAuth credentials to be configured.
+
+**Response:**
+```json
+{
+  "summary": "AI-generated summary...",
+  "details": { ... },
+  "timestamp": "2026-03-18T10:30:00",
+  "email_sent": true
+}
+```
+
+## Email Delivery
+
+The API can email the generated digest summary automatically using Gmail's API.
+
+### Setup
+
+1. **Configure recipient email** — set `DIGEST_RECIPIENT_EMAIL` in your `.env` file
+2. **Gmail OAuth** — the same Gmail OAuth credentials used for reading emails are reused for sending. If you set up Gmail access via the setup wizard, you already have what you need. If your tokens were generated before the `gmail.send` scope was added, re-run `python setup/get_google_tokens.py` to update permissions.
+3. **Optional: auto-send** — set `AUTO_SEND_EMAIL=true` to automatically email the digest every time `/digest` or `/digest/quick` is called.
+
+### Environment Variables
+
+| Variable | Description | Default |
+|---|---|---|
+| `DIGEST_RECIPIENT_EMAIL` | Email address to receive the digest | (none) |
+| `AUTO_SEND_EMAIL` | Auto-send email after generating digest | `false` |
+| `DIGEST_SENDER_NAME` | Display name for the sender | `Daily Digest` |
+
+### Usage
+
+**Always send (explicit):**
+```bash
+curl -X POST http://localhost:8000/digest/send
+```
+
+**Auto-send (when configured):**
+Any call to `/digest` or `/digest/quick` will automatically email the result when `AUTO_SEND_EMAIL=true` and `DIGEST_RECIPIENT_EMAIL` is set.
+
+The `email_sent` field in the response indicates whether the email was delivered successfully.

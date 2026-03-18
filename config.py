@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # Todo Service (Todoist example)
     TODOIST_API_KEY: str = ""
 
+    # Email Delivery Settings
+    DIGEST_RECIPIENT_EMAIL: str = ""  # Email address to send digest to
+    AUTO_SEND_EMAIL: bool = False  # Automatically email after generating digest
+    DIGEST_SENDER_NAME: str = "Daily Digest"  # Display name for the sender
+
     # Application Settings
     ALLOWED_ORIGINS: List[str] = ["*"]
     DEBUG: bool = False

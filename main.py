@@ -18,6 +18,7 @@ from services.weather_service import WeatherService
 from services.traffic_service import TrafficService
 from services.todo_service import TodoService
 from services.claude_service import ClaudeService
+from services.delivery_service import DeliveryService
 from config import settings
 
 # Configure logging
@@ -155,6 +156,7 @@ class DigestResponse(BaseModel):
     summary: str
     details: Dict[str, Any]
     timestamp: str
+    email_sent: bool = False
 
 
 @app.get("/")
@@ -241,12 +243,22 @@ async def generate_digest(request: DigestRequest, background_tasks: BackgroundTa
         from datetime import datetime
         timestamp = datetime.utcnow().isoformat()
 
+        # Auto-send email if configured
+        email_sent = False
+        if settings.AUTO_SEND_EMAIL and settings.DIGEST_RECIPIENT_EMAIL:
+            try:
+                delivery_service = DeliveryService()
+                email_sent = await delivery_service.send_digest_email(summary)
+            except Exception as e:
+                logger.error(f"Auto-send email failed: {str(e)}")
+
         logger.info("Digest generation completed successfully")
 
         return DigestResponse(
             summary=summary,
             details=digest_data,
-            timestamp=timestamp
+            timestamp=timestamp,
+            email_sent=email_sent,
         )
 
     except Exception as e:
@@ -263,6 +275,41 @@ async def generate_quick_digest():
     request = DigestRequest()
     background_tasks = BackgroundTasks()
     return await generate_digest(request, background_tasks)
+
+
+@app.post("/digest/send", response_model=DigestResponse)
+async def generate_and_send_digest(request: DigestRequest = None):
+    """
+    Generate a digest and send it via email.
+
+    Always sends the email regardless of AUTO_SEND_EMAIL setting.
+    Requires DIGEST_RECIPIENT_EMAIL to be configured.
+    """
+    if not DeliveryService.is_configured():
+        raise HTTPException(
+            status_code=400,
+            detail="Email delivery not configured. Set DIGEST_RECIPIENT_EMAIL and Gmail OAuth credentials.",
+        )
+
+    if request is None:
+        request = DigestRequest()
+    background_tasks = BackgroundTasks()
+
+    # Generate the digest
+    response = await generate_digest(request, background_tasks)
+
+    # Send the email (always, regardless of AUTO_SEND_EMAIL)
+    if not response.email_sent:
+        try:
+            delivery_service = DeliveryService()
+            response.email_sent = await delivery_service.send_digest_email(response.summary)
+        except Exception as e:
+            logger.error(f"Failed to send digest email: {str(e)}")
+
+    if not response.email_sent:
+        logger.warning("Email delivery was requested but sending failed")
+
+    return response
 
 
 if __name__ == "__main__":
