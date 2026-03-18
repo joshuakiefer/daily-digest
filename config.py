@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Todo Service (Todoist example)
     TODOIST_API_KEY: str = ""
 
+    # Reclaim.ai API
+    RECLAIM_API_KEY: str = ""
+
     # Email Delivery Settings
     DIGEST_RECIPIENT_EMAIL: str = ""  # Email address to send digest to
     AUTO_SEND_EMAIL: bool = False  # Automatically email after generating digest

@@ -5,11 +5,11 @@ A FastAPI-based daily digest service that aggregates information from multiple s
 ## Features
 
 - 📧 **Email Integration** - Fetch unread emails from Gmail
-- 📅 **Calendar Events** - Get today's schedule from Google Calendar
+- 📅 **Calendar Events** - Get today's schedule from Reclaim.ai or Google Calendar
 - 📰 **News Aggregation** - Top headlines from NewsAPI
 - 🌤️ **Weather** - Current weather and forecast
 - 🚗 **Traffic** - Real-time traffic using Google Routes API
-- ✅ **Todo Lists** - Today's tasks from Todoist
+- ✅ **Todo Lists** - Today's tasks from Todoist or Reclaim.ai
 - 🤖 **AI Summaries** - Intelligent summaries powered by Claude AI
 - 📨 **Email Delivery** - Automatically email digest summaries via Gmail
 
@@ -93,6 +93,7 @@ cp env.example .env
 - **OpenWeatherMap**: [Get key](https://openweathermap.org/api) - Weather
 - **Google Routes API**: [Setup guide](ROUTES_API_SETUP.md) - Traffic data
 - **Todoist**: [Get key](https://todoist.com/app/settings/integrations) - Todo lists
+- **Reclaim.ai**: [Get key](https://app.reclaim.ai/settings/developer) - Calendar events & tasks (replaces Google Calendar when configured)
 
 ### 3. Run the Application
 
@@ -190,6 +191,14 @@ The API can email the generated digest summary automatically using Gmail's API.
 | `DIGEST_RECIPIENT_EMAIL` | Email address to receive the digest | (none) |
 | `AUTO_SEND_EMAIL` | Auto-send email after generating digest | `false` |
 | `DIGEST_SENDER_NAME` | Display name for the sender | `Daily Digest` |
+
+### Reclaim.ai Integration
+
+When `RECLAIM_API_KEY` is set, Reclaim.ai replaces Google Calendar for fetching calendar events. Reclaim tasks are also used as a fallback when Todoist is not configured.
+
+| Variable | Description | Default |
+|---|---|---|
+| `RECLAIM_API_KEY` | Reclaim.ai API token | (none) |
 
 ### Usage
 

@@ -17,6 +17,7 @@ from services.calendar_service import CalendarService
 from services.weather_service import WeatherService
 from services.traffic_service import TrafficService
 from services.todo_service import TodoService
+from services.reclaim_service import ReclaimService
 from services.claude_service import ClaudeService
 from services.delivery_service import DeliveryService
 from config import settings
@@ -181,6 +182,7 @@ async def health_check():
             "weather": WeatherService.is_configured(),
             "traffic": TrafficService.is_configured(),
             "todos": TodoService.is_configured(),
+            "reclaim": ReclaimService.is_configured(),
             "claude": ClaudeService.is_configured(),
         }
     }
@@ -218,8 +220,13 @@ async def generate_digest(request: DigestRequest, background_tasks: BackgroundTa
             digest_data['news'] = await news_service.fetch_top_stories()
 
         if request.include_calendar:
-            logger.info("Fetching calendar events...")
-            digest_data['calendar'] = await calendar_service.fetch_today_events()
+            if ReclaimService.is_configured():
+                logger.info("Fetching calendar events from Reclaim.ai...")
+                reclaim_service = ReclaimService()
+                digest_data['calendar'] = await reclaim_service.fetch_today_events()
+            else:
+                logger.info("Fetching calendar events from Google Calendar...")
+                digest_data['calendar'] = await calendar_service.fetch_today_events()
 
         if request.include_weather:
             logger.info("Fetching weather...")
@@ -230,8 +237,16 @@ async def generate_digest(request: DigestRequest, background_tasks: BackgroundTa
             digest_data['traffic'] = await traffic_service.fetch_traffic(request.location)
 
         if request.include_todos:
-            logger.info("Fetching todos...")
-            digest_data['todos'] = await todo_service.fetch_todos()
+            if TodoService.is_configured():
+                logger.info("Fetching todos from Todoist...")
+                digest_data['todos'] = await todo_service.fetch_todos()
+            elif ReclaimService.is_configured():
+                logger.info("Fetching tasks from Reclaim.ai...")
+                reclaim_service = ReclaimService()
+                digest_data['todos'] = await reclaim_service.fetch_tasks()
+            else:
+                logger.info("No todo service configured")
+                digest_data['todos'] = []
 
         logger.info(f"Digest data collected: {list(digest_data.keys())}")
 
