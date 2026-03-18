@@ -3,6 +3,7 @@
 
 __all__ = [
     "ClaudeService",
+    "DeliveryService",
     "EmailService",
     "NewsService",
     "CalendarService",

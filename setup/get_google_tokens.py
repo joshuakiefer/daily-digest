@@ -20,9 +20,10 @@ import os
 import sys
 import glob
 
-# Scopes for Gmail and Calendar read access
+# Scopes for Gmail (read + send) and Calendar read access
 SCOPES = [
     'https://www.googleapis.com/auth/gmail.readonly',
+    'https://www.googleapis.com/auth/gmail.send',
     'https://www.googleapis.com/auth/calendar.readonly',
 ]
 
