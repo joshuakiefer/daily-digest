@@ -44,7 +44,7 @@ class ClaudeService:
             def call_claude(prompt):
                 message = self.client.messages.create(
                     model="claude-sonnet-4-6",
-                    max_tokens=1500,
+                    max_tokens=4000,
                     messages=[
                         {"role": "user", "content": prompt}
                     ]
@@ -134,23 +134,47 @@ class ClaudeService:
             digest_data["weather"] = weather_results
 
             # Create the prompt
-            final_summary_prompt = f"""You are a personal assistant helping to create a daily digest.
+            final_summary_prompt = f"""You are a personal executive assistant creating a daily briefing for a busy business owner who runs multiple companies (Scalable Bookkeeping, Flywheel Bookkeeping, Flywheel CFO, and works with Kevin Barry & Associates).
 
-Based on the following information, create a concise, actionable summary that highlights:
-1. Urgent emails that need responses
-2. Important calendar events today
-3. Critical news that might affect the user
-4. Weather considerations for the day
-5. Traffic alerts or considerations
-6. Top priority todos
+Create a concise, actionable daily digest organized into these sections:
 
-Feel free to make inferences about what might be most relevent to the user. Do not include anything that is not relevant to the user.
+## 📬 EMAIL SUMMARY & ACTION ITEMS
+For each email that requires attention:
+- One-line summary of what the email is about
+- **Action needed**: What specifically the user should do (reply, review, approve, etc.)
+- **Deadline/urgency**: If there's a time-sensitive element, flag it
+- **Follow-up**: Any follow-up actions needed
+
+Group emails by priority:
+1. 🔴 URGENT — needs response today
+2. 🟡 ACTION NEEDED — needs response this week  
+3. 🟢 FYI — informational, no action needed
+
+Skip spam, marketing, and automated notifications unless they contain something actionable.
+
+## 📅 TODAY'S SCHEDULE
+List today's events (marked is_today=True) in chronological order with:
+- Time, event name, and any prep needed
+- Flag any back-to-back meetings
+
+## 📋 UPCOMING (Next 7 Days)
+Briefly note important upcoming meetings or deadlines.
+
+## ✅ ACTION ITEM CHECKLIST
+A consolidated checklist of everything the user needs to do today, pulled from emails, calendar, and todos. Format as a simple numbered list.
+
+Rules:
+- Be direct and specific — no filler
+- If an email is from a client or team member, always surface it
+- If an email asks a question or requests something, always flag the action item
+- Skip boilerplate email signatures and legal disclaimers when summarizing
+- Use the actual names of people and companies
 
 Here's the data:
 
 {full_context}
 
-Please provide a well-organized summary with clear action items and priorities. Use bullet points and be concise."""
+Provide the digest now."""
 
             final_summary = call_claude(final_summary_prompt)
             logger.info(f"Claude final summary response: {final_summary}")
@@ -165,8 +189,22 @@ Please provide a well-organized summary with clear action items and priorities. 
         """Format the digest data into a readable context for Claude"""
         context_parts = []
 
-        if 'emails' in digest_data:
-            context_parts.append("EMAILS:\n" + str(digest_data['emails']))
+        if 'emails' in digest_data and digest_data['emails']:
+            email_lines = ["EMAILS:"]
+            for i, email in enumerate(digest_data['emails'], 1):
+                email_lines.append(f"\n--- Email {i} ---")
+                email_lines.append(f"From: {email.get('from', 'Unknown')}")
+                email_lines.append(f"To: {email.get('to', '')}")
+                email_lines.append(f"Subject: {email.get('subject', 'No subject')}")
+                email_lines.append(f"Date: {email.get('date', '')}")
+                body = email.get('body', '')
+                if body:
+                    email_lines.append(f"Body:\n{body}")
+                else:
+                    snippet = email.get('snippet', '')
+                    if snippet:
+                        email_lines.append(f"Preview: {snippet}")
+            context_parts.append("\n".join(email_lines))
 
         if 'calendar' in digest_data:
             context_parts.append("\nCALENDAR EVENTS:\n" + str(digest_data['calendar']))
