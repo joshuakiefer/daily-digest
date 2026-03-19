@@ -35,15 +35,19 @@ class ReclaimService:
 
     async def fetch_today_events(self) -> List[Dict[str, Any]]:
         """
-        Fetch calendar events from today through 7 days out.
+        Fetch calendar events from today through 7 days out across all
+        connected calendars.
 
         Returns:
             List of event dicts with: id, summary, description, location,
             start, end, is_today.
         """
         try:
-            now = datetime.now(timezone.utc)
-            today = now.date()
+            # Use Eastern Time for "today" since user is in ET
+            from zoneinfo import ZoneInfo
+            eastern = ZoneInfo("America/New_York")
+            now_et = datetime.now(eastern)
+            today = now_et.date()
             end_date = today + timedelta(days=7)
 
             async with httpx.AsyncClient() as client:
@@ -53,6 +57,7 @@ class ReclaimService:
                     params={
                         "start": today.isoformat(),
                         "end": end_date.isoformat(),
+                        "allConnected": "true",
                     },
                     timeout=15.0,
                 )
@@ -87,7 +92,7 @@ class ReclaimService:
                         "is_today": is_today,
                     })
 
-                logger.info(f"Fetched {len(event_list)} events from Reclaim.ai")
+                logger.info(f"Fetched {len(event_list)} events from Reclaim.ai (allConnected=true)")
                 return event_list
 
         except Exception as e:
